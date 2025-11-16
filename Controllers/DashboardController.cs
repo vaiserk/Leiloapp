@@ -44,6 +44,18 @@ namespace Leiloapp.Controllers
             public decimal TotalArrecadado { get; set; }
             public System.Collections.Generic.List<Leilao> TopLeiloes { get; set; }
             public System.Collections.Generic.Dictionary<int, decimal> ArrecadadoPorLeilao { get; set; }
+            public int LotesVendidos { get; set; }
+            public int LotesNaoVendidos { get; set; }
+            public int LotesNaoIniciados { get; set; }
+            public int LotesEmLicitacao { get; set; }
+            public System.Collections.Generic.List<DashboardLoteComparativo> LotesComparativo { get; set; }
+        }
+
+        public class DashboardLoteComparativo
+        {
+            public string Titulo { get; set; }
+            public decimal ValorMinimo { get; set; }
+            public decimal ValorVendido { get; set; }
         }
 
         public async Task<IActionResult> Admin()
@@ -74,7 +86,17 @@ namespace Leiloapp.Controllers
                 PagamentosPagos = await _context.Pagamentos.CountAsync(p => p.Status == 1),
                 TotalArrecadado = await _context.Lotes.Where(l => l.Status == 2).SumAsync(l => l.LanceAtual),
                 TopLeiloes = topLeiloes,
-                ArrecadadoPorLeilao = arrecadadoPorLeilao
+                ArrecadadoPorLeilao = arrecadadoPorLeilao,
+                LotesVendidos = await _context.Lotes.CountAsync(l => l.Status == 2),
+                LotesNaoVendidos = await _context.Lotes.CountAsync(l => l.Status == 3),
+                LotesNaoIniciados = await _context.Lotes.CountAsync(l => l.Status == 0),
+                LotesEmLicitacao = await _context.Lotes.CountAsync(l => l.Status == 1),
+                LotesComparativo = await _context.Lotes
+                    .Where(l => l.Status == 2)
+                    .OrderByDescending(l => l.AtualizadoEm)
+                    .Select(l => new DashboardLoteComparativo { Titulo = l.Titulo, ValorMinimo = l.ValorMinimo, ValorVendido = l.LanceAtual })
+                    .Take(10)
+                    .ToListAsync()
             };
 
             return View(vm);

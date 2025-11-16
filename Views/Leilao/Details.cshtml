@@ -140,6 +140,47 @@
                 const alvo = document.querySelector('.valor-arrecadado');
                 if (alvo) alvo.textContent = v.toFixed(2);
             });
+            connection.on('LoteAberto', function (data) {
+                const card = document.querySelector(`.card[data-lote-id="${data.loteId}"]`);
+                if (!card) return;
+                const body = card.querySelector('.card-body');
+                const status = card.querySelector('.status-venda') || card.querySelector('.alert');
+                if (status) status.remove();
+                const abrirBtn = card.querySelector('button[data-action="abrir"]');
+                const finalizarNaoBtn = card.querySelector('button[data-action="finalizar-nao"]');
+                const finalizarVendBtn = card.querySelector('button[data-action="finalizar-vendido"]');
+                if (abrirBtn) abrirBtn.disabled = true;
+                if (finalizarNaoBtn) finalizarNaoBtn.disabled = false;
+                if (finalizarVendBtn) finalizarVendBtn.disabled = false;
+                let participar = card.querySelector('a.btn.btn-primary[href*="SalaLeilao"]');
+                if (!participar) {
+                    participar = document.createElement('a');
+                    participar.className = 'btn btn-primary';
+                    participar.href = `/Leilao/SalaLeilao/${data.loteId}`;
+                    participar.textContent = 'Participar do Leilão';
+                    body.appendChild(participar);
+                }
+            });
+            connection.on('LoteFinalizado', function (data) {
+                const card = document.querySelector(`.card[data-lote-id="${data.loteId}"]`);
+                if (!card) return;
+                const body = card.querySelector('.card-body');
+                const valorFinal = parseFloat(data.valorFinal || 0).toFixed(2);
+                const vencedor = data.vendido ? (data.vencedor || 'Comprador') : null;
+                const lanceSpan = card.querySelector('.lance-atual');
+                if (lanceSpan) lanceSpan.textContent = valorFinal;
+                const existente = card.querySelector('.status-venda');
+                if (existente) existente.remove();
+                const div = document.createElement('div');
+                div.className = `alert ${data.vendido ? 'alert-success' : 'alert-secondary'} status-venda`;
+                div.innerHTML = data.vendido
+                    ? `Vendido para <strong>${vencedor}</strong> por R$ ${valorFinal}`
+                    : 'Não Vendido';
+                body.appendChild(div);
+                card.querySelectorAll('button[data-action]').forEach(b => b.disabled = true);
+                const participar = card.querySelector('a.btn.btn-primary[href*="SalaLeilao"]');
+                if (participar) participar.remove();
+            });
             connection.start()
                 .then(function () { connection.invoke('EntrarLeilao', '@Model.Id'); })
                 .catch(function (err) { console.error(err.toString()); });
@@ -156,7 +197,32 @@
             if (action === 'finalizar-vendido') { url = '/api/lance/finalizar-lote'; body = { loteId: parseInt(loteId), vendido: true }; }
             if (!url) return;
             const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-            if (resp.ok) { location.reload(); }
+            if (resp.ok) {
+                const card = document.querySelector(`.card[data-lote-id="${loteId}"]`);
+                if (!card) return;
+                if (action === 'abrir') {
+                    const status = card.querySelector('.status-venda') || card.querySelector('.alert');
+                    if (status) status.remove();
+                    const abrirBtn = card.querySelector('button[data-action="abrir"]');
+                    const finalizarNaoBtn = card.querySelector('button[data-action="finalizar-nao"]');
+                    const finalizarVendBtn = card.querySelector('button[data-action="finalizar-vendido"]');
+                    if (abrirBtn) abrirBtn.disabled = true;
+                    if (finalizarNaoBtn) finalizarNaoBtn.disabled = false;
+                    if (finalizarVendBtn) finalizarVendBtn.disabled = false;
+                    let participar = card.querySelector('a.btn.btn-primary[href*="SalaLeilao"]');
+                    if (!participar) {
+                        participar = document.createElement('a');
+                        participar.className = 'btn btn-primary';
+                        participar.href = `/Leilao/SalaLeilao/${loteId}`;
+                        participar.textContent = 'Participar do Leilão';
+                        card.querySelector('.card-body').appendChild(participar);
+                    }
+                } else {
+                    card.querySelectorAll('button[data-action]').forEach(b => b.disabled = true);
+                    const participar = card.querySelector('a.btn.btn-primary[href*="SalaLeilao"]');
+                    if (participar) participar.remove();
+                }
+            }
         });
     </script>
 </div>

@@ -1,3 +1,4 @@
+@inject Microsoft.AspNetCore.Identity.UserManager<Leiloapp.Models.Entities.Usuario> UserManager
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -13,18 +14,18 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand d-flex align-items-center gap-2" asp-area="" asp-controller="Home" asp-action="Index">
                     <img src="~/img/branding/logo.jpg" alt="Leiloapp" height="32" class="d-inline-block align-text-top" />
                     <span>Leiloapp</span>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="collapse navbar-collapse" id="navbarMain">
+                    <ul class="navbar-nav me-auto">
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
@@ -32,9 +33,13 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Leilao" asp-action="Index">Leilões</a>
                         </li>
                     </ul>
-                    <ul class="navbar-nav">
+                    @{ var currentUser = User.Identity.IsAuthenticated ? await UserManager.GetUserAsync(User) : null; }
+                    <ul class="navbar-nav ms-auto align-items-center">
                         @if (User.Identity.IsAuthenticated)
                         {
+                            <li class="nav-item">
+                                <span class="navbar-text text-dark me-3">@(currentUser?.Nome ?? User?.Identity?.Name)</span>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
                             </li>
