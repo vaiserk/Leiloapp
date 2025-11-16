@@ -1,0 +1,10 @@
+@{
+    ViewData["Title"] = "Acesso Negado";
+}
+
+<div class="container mt-4">
+    <h2>Acesso negado</h2>
+    <p>Você não tem permissão para acessar este recurso.</p>
+    <a class="btn btn-primary" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@((string)(ViewData["ReturnUrl"] ?? "/"))">Fazer login</a>
+    <a class="btn btn-secondary ms-2" asp-controller="Home" asp-action="Index">Voltar</a>
+</div>

@@ -1,0 +1,206 @@
+@model Leiloapp.Models.Entities.Lote
+
+@{
+    ViewData["Title"] = "Sala de Leilão - " + Model.Titulo;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>@Model.Titulo</h1>
+            <p class="lead">@Model.Descricao</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Lance Atual</h4>
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="text-primary">R$ <span id="lanceAtual">@Model.LanceAtual.ToString("F2")</span></h2>
+                    <p class="text-muted">Lance mínimo: R$ <span id="lanceMinimo">@Model.LanceMinimo.ToString("F2")</span></p>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h4>Dar Lance</h4>
+                </div>
+                <div class="card-body">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">R$</span>
+                        <input type="number" class="form-control" id="valorLance" step="0.01" min="@Model.LanceMinimo" value="@Model.LanceMinimo">
+                        <button class="btn btn-primary" type="button" id="btnDarLance">Dar Lance</button>
+                    </div>
+                    <div id="mensagemLance" class="alert" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Histórico de Lances</h4>
+                </div>
+                <div class="card-body">
+                    <div id="historicoLances" style="max-height: 300px; overflow-y: auto;">
+                        @foreach (var lance in Model.Lances.OrderByDescending(l => l.DataHora).Take(10))
+                        {
+                            <div class="border-bottom pb-2 mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>@(lance.Usuario?.Nome ?? "Anônimo")</span>
+                                    <span class="text-primary fw-bold">R$ @lance.Valor.ToString("F2")</span>
+                                </div>
+                                <small class="text-muted">@lance.DataHora.ToString("HH:mm:ss")</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <a asp-controller="Leilao" asp-action="Details" asp-route-id="@Model.LeilaoId" class="btn btn-secondary">Voltar para o Leilão</a>
+            <button id="btnSairSala" class="btn btn-outline-secondary ms-2" style="display:none;">Sair da Sala</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        // Conectar ao SignalR
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/hubs/leilao")
+            .build();
+
+        const isAuth = @((User.Identity?.IsAuthenticated ?? false).ToString().ToLower());
+
+        // Configurar listeners
+        connection.on("NovoLance", function (data) {
+            console.log("Novo lance recebido:", data);
+            
+            // Atualizar lance atual
+            document.getElementById("lanceAtual").textContent = data.valor.toFixed(2);
+            
+            // Calcular novo lance mínimo (5% a mais ou R$ 10,00)
+            const novoMinimo = Math.max(data.valor * 1.05, data.valor + 10);
+            document.getElementById("lanceMinimo").textContent = novoMinimo.toFixed(2);
+            document.getElementById("valorLance").min = novoMinimo.toFixed(2);
+            document.getElementById("valorLance").value = novoMinimo.toFixed(2);
+            
+            // Adicionar ao histórico
+            const historico = document.getElementById("historicoLances");
+            const novoLanceHtml = `
+                <div class="border-bottom pb-2 mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>${data.usuario}</span>
+                        <span class="text-primary fw-bold">R$ ${data.valor.toFixed(2)}</span>
+                    </div>
+                    <small class="text-muted">${new Date().toLocaleTimeString('pt-BR')}</small>
+                </div>
+            `;
+            historico.insertAdjacentHTML('afterbegin', novoLanceHtml);
+            
+            // Mostrar notificação
+            mostrarMensagem(`Novo lance de R$ ${data.valor.toFixed(2)} por ${data.usuario}`, 'success');
+        });
+
+        connection.on("LoteFinalizado", function (data) {
+            const btn = document.getElementById("btnDarLance");
+            const input = document.getElementById("valorLance");
+            if (btn) btn.disabled = true;
+            if (input) input.disabled = true;
+            const sair = document.getElementById("btnSairSala");
+            if (sair) sair.style.display = 'inline-block';
+            if (data.vendido) {
+                const nome = data.vencedor || 'Comprador';
+                const valor = parseFloat(data.valorFinal || 0).toFixed(2);
+                mostrarToast(`Lote vendido para ${nome} por R$ ${valor}`, 'success');
+            } else {
+                mostrarToast('Lote finalizado como Não Vendido', 'secondary');
+            }
+        });
+
+        // Iniciar conexão
+        connection.start().then(function () {
+            connection.invoke("EntrarLeilao", "@Model.LeilaoId");
+            connection.invoke("EntrarLote", "@Model.Id");
+        }).catch(function (err) {
+            console.error(err.toString());
+        });
+
+        // Função para dar lance
+        document.getElementById("btnDarLance").addEventListener("click", async function () {
+            if (!isAuth) {
+                const url = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = url;
+                return;
+            }
+            const valor = parseFloat(document.getElementById("valorLance").value);
+            const loteId = @Model.Id;
+            
+            if (valor && valor > 0) {
+                try {
+                    const resp = await fetch('/api/lance/dar-lance', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ loteId, valor })
+                    });
+                    const data = await resp.json();
+                    if (resp.ok && data.success) {
+                        mostrarMensagem(data.message, 'success');
+                    } else {
+                        mostrarMensagem(data.message || 'Falha ao enviar lance', 'danger');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    mostrarMensagem('Erro ao enviar lance. Tente novamente.', 'danger');
+                }
+            }
+        });
+
+        if (@Model.Status != 1) {
+            const btn = document.getElementById("btnDarLance");
+            const input = document.getElementById("valorLance");
+            if (btn) btn.disabled = true;
+            if (input) input.disabled = true;
+            const sair = document.getElementById("btnSairSala");
+            if (sair) sair.style.display = 'inline-block';
+        }
+
+        function mostrarToast(mensagem, tipo) {
+            let toastEl = document.getElementById('liveToast');
+            if (!toastEl) {
+                const container = document.createElement('div');
+                container.className = 'position-fixed top-0 end-0 p-3';
+                container.style.zIndex = '1080';
+                container.innerHTML = `
+                    <div id="liveToast" class="toast align-items-center text-bg-${tipo} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body" id="toastBody"></div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(container);
+                toastEl = document.getElementById('liveToast');
+            } else {
+                toastEl.className = `toast align-items-center text-bg-${tipo} border-0`;
+            }
+            const bodyEl = document.getElementById('toastBody');
+            if (bodyEl) bodyEl.textContent = mensagem;
+            const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+            toast.show();
+        }
+
+        document.getElementById('btnSairSala').addEventListener('click', function () {
+            connection.invoke('SairLote', '@Model.Id').finally(function () {
+                window.location.href = '@Url.Action("Details","Leilao", new { id = Model.LeilaoId })';
+            });
+        });
+    </script>
+}

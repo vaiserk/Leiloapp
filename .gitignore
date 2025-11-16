@@ -1,0 +1,28 @@
+## Compilação e cache
+bin/
+obj/
+*.log
+logs/
+Leiloapp/
+
+## IDE/Editor
+.vs/
+*.user
+*.suo
+
+## Publicação/estáticos gerados
+wwwroot/lib/
+wwwroot/css/*.map
+wwwroot/js/*.map
+
+## Configurações locais e segredos
+appsettings.json
+appsettings.*.json
+
+## Artefatos de pacote
+*.nupkg
+*.snupkg
+
+## Arquivos temporários
+*.tmp
+*.temp

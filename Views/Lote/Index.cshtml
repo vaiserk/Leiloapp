@@ -1,0 +1,57 @@
+@model IEnumerable<Leiloapp.Models.Entities.Lote>
+
+@{
+    ViewData["Title"] = "Lotes";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Lotes</h2>
+        <a class="btn btn-primary" asp-action="Create" asp-route-leilaoId="@ViewBag.LeilaoId">Adicionar Lote</a>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Título</th>
+                <th>Lance Inicial</th>
+                <th>Lance Atual</th>
+                <th>Status</th>
+                <th>Visibilidade</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var lote in Model)
+            {
+                <tr>
+                    <td>@lote.Numero</td>
+                    <td>@lote.Titulo</td>
+                    <td>R$ @lote.ValorInicial.ToString("F2")</td>
+                    <td>R$ @lote.LanceAtual.ToString("F2")</td>
+                    <td>@lote.Status</td>
+                    <td>
+                        @if (lote.Visivel)
+                        {
+                            <span class="badge bg-success">Visível</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Oculto</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        @if ((int)(ViewBag.UsuarioTipo ?? 0) == 2 || (int)(ViewBag.UsuarioTipo ?? 0) == 3)
+                        {
+                            <a asp-action="Edit" asp-route-id="@lote.Id" class="btn btn-sm btn-primary">Editar</a>
+                            <a asp-action="Delete" asp-route-id="@lote.Id" class="btn btn-sm btn-danger ms-2">Excluir</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <a class="btn btn-secondary" asp-controller="Leilao" asp-action="Details" asp-route-id="@ViewBag.LeilaoId">Voltar</a>
+</div>

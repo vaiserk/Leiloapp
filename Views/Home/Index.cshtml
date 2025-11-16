@@ -1,0 +1,93 @@
+@model IEnumerable<Leiloapp.Models.Entities.Leilao>
+
+@{
+    ViewData["Title"] = "Leiloapp - Sistema de Leilões";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12 text-center mb-5">
+            <h1 class="display-4">Bem-vindo ao Leiloapp</h1>
+            <p class="lead">Sistema de leilões da Santa Casa de União de Minas</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>Leilões Ativos</h2>
+            <hr />
+        </div>
+    </div>
+
+    <div class="row">
+        @foreach (var leilao in Model)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">@leilao.Titulo</h5>
+                        <p class="card-text">@leilao.Descricao</p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar"></i> Início: @leilao.DataInicio.ToString("dd/MM/yyyy HH:mm")
+                            </small>
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="bi bi-geo-alt"></i> Local: @leilao.Local
+                            </small>
+                        </p>
+                        <p class="card-text">
+                            <span class="badge bg-primary">@leilao.Lotes.Count lotes</span>
+                        </p>
+                        <a asp-controller="Leilao" asp-action="Details" asp-route-id="@leilao.Id" class="btn btn-primary">
+                            Ver Detalhes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="row">
+            <div class="col-12 text-center">
+                <div class="alert alert-info">
+                    <h4>Nenhum leilão ativo no momento</h4>
+                    <p>Volte em breve para conferir nossos próximos leilões!</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row mt-5">
+        <div class="col-md-4 text-center">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Como Participar</h5>
+                    <p class="card-text">Cadastre-se e participe dos nossos leilões online</p>
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-success">Cadastrar-se</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-center">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Leilões ao Vivo</h5>
+                    <p class="card-text">Acompanhe os leilões em tempo real</p>
+                    <a href="#" class="btn btn-info">Ver Leilões</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-center">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Suporte</h5>
+                    <p class="card-text">Dúvidas? Entre em contato conosco</p>
+                    <a asp-controller="Home" asp-action="Contato" class="btn btn-warning">Contato</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

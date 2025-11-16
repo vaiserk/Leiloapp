@@ -1,0 +1,80 @@
+@model Leiloapp.Controllers.DashboardController.LeiloeiroDashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard Leiloeiro";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Meu Dashboard</h1>
+        <a asp-controller="Leilao" asp-action="Create" class="btn btn-primary">Criar Novo Leilão</a>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Em Andamento</h6>
+                    <p>@Model.EmAndamento</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Ativos</h6>
+                    <p>@Model.Ativos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Finalizados</h6>
+                    <p>@Model.Finalizados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Arrecadado</h6>
+                    <p>R$ @Model.TotalArrecadado.ToString("F2")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4>Meus Leilões</h4>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Status</th>
+                    <th>Início</th>
+                    <th>Fim</th>
+                    <th>Lotes</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var l in Model.MeusLeiloes)
+                {
+                    <tr>
+                        <td>@l.Titulo</td>
+                        <td>@(l.Status == 0 ? "Aberto" : l.Status == 1 ? "Em Andamento" : "Finalizado")</td>
+                        <td>@l.DataInicio.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@l.DataFim.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@(l.Lotes?.Count ?? 0)</td>
+                        <td>
+                            <a asp-controller="Leilao" asp-action="Details" asp-route-id="@l.Id" class="btn btn-sm btn-primary">Gerenciar</a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

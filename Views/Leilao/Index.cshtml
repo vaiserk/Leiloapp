@@ -1,0 +1,44 @@
+@model IEnumerable<Leiloapp.Models.Entities.Leilao>
+
+@{
+    ViewData["Title"] = "Leilões";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>Leilões</h1>
+            @if ((int)(ViewBag.UsuarioTipo ?? 0) == 2 || (int)(ViewBag.UsuarioTipo ?? 0) == 3)
+            {
+                <p>
+                    <a asp-action="Create" class="btn btn-primary">Criar Novo Leilão</a>
+                </p>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@item.Titulo</h5>
+                        <p class="card-text">@item.Descricao</p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Início: @item.DataInicio.ToString("dd/MM/yyyy HH:mm")
+                            </small>
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Status: @(item.Status == 0 ? "Aberto" : item.Status == 1 ? "Em Andamento" : "Finalizado")
+                            </small>
+                        </p>
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info">Detalhes</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

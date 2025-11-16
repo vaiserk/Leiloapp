@@ -1,0 +1,83 @@
+@model Leiloapp.Controllers.DashboardController.AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard Admin";
+}
+
+<div class="container mt-4">
+    <h1>Dashboard Administrador</h1>
+
+    <div class="row mt-3">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Usuários</h6>
+                    <p>Total: @Model.TotalUsuarios</p>
+                    <p>Pendentes: @Model.UsuariosPendentes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Leilões</h6>
+                    <p>Ativos: @Model.LeiloesAtivos</p>
+                    <p>Finalizados: @Model.LeiloesFinalizados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Pagamentos</h6>
+                    <p>Pendentes: @Model.PagamentosPendentes</p>
+                    <p>Pagos: @Model.PagamentosPagos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Arrecadação</h6>
+                    <p>Total: R$ @Model.TotalArrecadado.ToString("F2")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4>Top 5 Leilões por Arrecadação</h4>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Leiloeiro</th>
+                    <th>Status</th>
+                    <th>Arrecadado</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var l in Model.TopLeiloes)
+                {
+                    <tr>
+                        <td>@l.Titulo</td>
+                        <td>@l.Leiloeiro?.Nome</td>
+                        <td>@(l.Status == 0 ? "Aberto" : l.Status == 1 ? "Em Andamento" : "Finalizado")</td>
+                        <td>
+                            @{
+                                var total = Model.ArrecadadoPorLeilao != null && Model.ArrecadadoPorLeilao.ContainsKey(l.Id)
+                                    ? Model.ArrecadadoPorLeilao[l.Id]
+                                    : l.ValorArrecadado;
+                            }
+                            R$ @total.ToString("F2")
+                        </td>
+                        <td><a asp-controller="Leilao" asp-action="Details" asp-route-id="@l.Id" class="btn btn-sm btn-primary">Abrir</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,162 @@
+@model Leiloapp.Models.Entities.Leilao
+
+@{
+    ViewData["Title"] = "Detalhes do Leilão";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>@Model.Titulo</h1>
+            <hr />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Informações do Leilão</h5>
+                    <dl class="row">
+                        <dt class="col-sm-3">Descrição:</dt>
+                        <dd class="col-sm-9">@Model.Descricao</dd>
+                        
+                        <dt class="col-sm-3">Data Início:</dt>
+                        <dd class="col-sm-9">@Model.DataInicio.ToString("dd/MM/yyyy HH:mm")</dd>
+                        
+                        <dt class="col-sm-3">Data Fim:</dt>
+                        <dd class="col-sm-9">@Model.DataFim.ToString("dd/MM/yyyy HH:mm")</dd>
+                        
+                        <dt class="col-sm-3">Local:</dt>
+                        <dd class="col-sm-9">@Model.Local</dd>
+                        
+                        <dt class="col-sm-3">Status:</dt>
+                        <dd class="col-sm-9">
+                            @if (Model.Status == 0)
+                            {
+                                <span class="badge bg-success">Aberto</span>
+                            }
+                            else if (Model.Status == 1)
+                            {
+                                <span class="badge bg-warning">Em Andamento</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Finalizado</span>
+                            }
+                        </dd>
+                        <dt class="col-sm-3">Arrecadado:</dt>
+                        <dd class="col-sm-9">R$ <span class="valor-arrecadado">@Model.ValorArrecadado.ToString("F2")</span></dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <h3>Lotes do Leilão</h3>
+            @if ((int)(ViewBag.UsuarioTipo ?? 0) == 2 || (int)(ViewBag.UsuarioTipo ?? 0) == 3)
+            {
+                <a class="btn btn-sm btn-outline-primary" asp-controller="Lote" asp-action="Create" asp-route-leilaoId="@Model.Id">Adicionar Lote</a>
+                <a class="btn btn-sm btn-outline-secondary ms-2" asp-controller="Leilao" asp-action="Edit" asp-route-id="@Model.Id">Editar Leilão</a>
+                <a class="btn btn-sm btn-outline-danger ms-2" asp-controller="Leilao" asp-action="Delete" asp-route-id="@Model.Id">Excluir Leilão</a>
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        @{ var canManage = (int)(ViewBag.UsuarioTipo ?? 0) == 2 || (int)(ViewBag.UsuarioTipo ?? 0) == 3; }
+        @foreach (var lote in (canManage ? Model.Lotes : Model.Lotes.Where(l => l.Visivel)))
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card" data-lote-id="@lote.Id">
+                    <div class="card-body">
+                        <h6 class="card-title">@lote.Titulo</h6>
+                        <p class="card-text">@lote.Descricao</p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Lance Inicial: R$ @lote.ValorInicial.ToString("F2")
+                            </small>
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Lance Atual: R$ <span class="lance-atual">@lote.LanceAtual.ToString("F2")</span>
+                            </small>
+                        </p>
+                        @if (lote.Status == 2)
+                        {
+                            <div class="alert alert-success">
+                                Vendido para <strong>@(lote.LanceVencedor?.Nome ?? "Comprador")</strong> por R$ @lote.LanceAtual.ToString("F2")
+                            </div>
+                        }
+                        else if (lote.Status == 3)
+                        {
+                            <div class="alert alert-secondary">Não Vendido</div>
+                        }
+                        @if (lote.Status == 0 || lote.Status == 1)
+                        {
+                            <a asp-action="SalaLeilao" asp-route-id="@lote.Id" class="btn btn-primary">Participar do Leilão</a>
+                        }
+                        @if ((int)(ViewBag.UsuarioTipo ?? 0) == 2)
+                        {
+                            <button class="btn btn-outline-success ms-2" data-action="abrir" data-lote="@lote.Id">Abrir para Lances</button>
+                            <button class="btn btn-outline-danger ms-2" data-action="finalizar-nao" data-lote="@lote.Id">Finalizar Não Vendido</button>
+                            <button class="btn btn-outline-primary ms-2" data-action="finalizar-vendido" data-lote="@lote.Id">Finalizar Vendido</button>
+                        }
+                        @if ((int)(ViewBag.UsuarioTipo ?? 0) == 2 || (int)(ViewBag.UsuarioTipo ?? 0) == 3)
+                        {
+                            <a asp-controller="Lote" asp-action="Edit" asp-route-id="@lote.Id" class="btn btn-outline-primary ms-2">Editar</a>
+                            <a asp-controller="Lote" asp-action="Delete" asp-route-id="@lote.Id" class="btn btn-outline-danger ms-2">Excluir</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <a asp-action="Index" class="btn btn-secondary">Voltar para Lista</a>
+        </div>
+    </div>
+    <script>
+        const srScript = document.createElement('script');
+        srScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js';
+        document.body.appendChild(srScript);
+        srScript.onload = function () {
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl('/hubs/leilao')
+                .build();
+            connection.on('NovoLance', function (data) {
+                const card = document.querySelector(`.card[data-lote-id="${data.loteId}"]`);
+                if (!card) return;
+                const valor = parseFloat(data.valor || 0);
+                const alvo = card.querySelector('.lance-atual');
+                if (alvo) alvo.textContent = valor.toFixed(2);
+            });
+            connection.on('LeilaoAtualizado', function (data) {
+                const v = parseFloat(data.valorArrecadado || 0);
+                const alvo = document.querySelector('.valor-arrecadado');
+                if (alvo) alvo.textContent = v.toFixed(2);
+            });
+            connection.start()
+                .then(function () { connection.invoke('EntrarLeilao', '@Model.Id'); })
+                .catch(function (err) { console.error(err.toString()); });
+        };
+        document.addEventListener('click', async (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            const loteId = btn.getAttribute('data-lote');
+            const action = btn.getAttribute('data-action');
+            let url = '';
+            let body = {};
+            if (action === 'abrir') { url = '/api/lance/abrir-lote'; body = { loteId: parseInt(loteId) }; }
+            if (action === 'finalizar-nao') { url = '/api/lance/finalizar-lote'; body = { loteId: parseInt(loteId), vendido: false }; }
+            if (action === 'finalizar-vendido') { url = '/api/lance/finalizar-lote'; body = { loteId: parseInt(loteId), vendido: true }; }
+            if (!url) return;
+            const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            if (resp.ok) { location.reload(); }
+        });
+    </script>
+</div>
